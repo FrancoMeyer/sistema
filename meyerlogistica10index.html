@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEYER LOGÍSTICA — Sistema de Gestión Global</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg-base:#090a0e;
+    --bg-surface:#12151c;
+    --bg-raised:#1a1e29;
+    --border-subtle:rgba(56,189,248,0.12);
+    --border-active:rgba(56,189,248,0.3);
+    --text-main:#f3f4f6;
+    --text-muted:#9ca3af;
+    --text-dim:#4b5563;
+    --accent-blue:#1d4ed8;
+    --accent-blue-bright:#38bdf8;
+    --accent-blue-dim:rgba(56,189,248,0.08);
+    --accent-green:#10b981;
+    --accent-amber:#f59e0b;
+    --accent-red:#ef4444;
+    --radius:6px;
+    --font-ui:'Outfit', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    background:var(--bg-base);
+    color:var(--text-main);
+    font-family:var(--font-ui);
+    min-height:100vh;
+  }
+
+  body{
+    background-color: #090a0e;
+    background-image: 
+      linear-gradient(rgba(9, 10, 14, 0.9), rgba(9, 10, 14, 0.9)),
+      url('fondo-reja_2.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  a{color:inherit; text-decoration:none;}
+  .hidden{ display:none !important; }
+
+  /* ================= LOGIN ================= */
+  #screen-login{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    width:100%;
+    max-width:400px;
+    background:var(--bg-surface);
+    backdrop-filter: blur(12px);
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius);
+    padding:36px 32px 28px;
+    box-shadow:0 25px 50px rgba(0,0,0,0.8), 0 0 25px rgba(29,78,216,0.2);
+  }
+  .login-brand{
+    text-align:center;
+    margin-bottom:24px;
+  }
+  .login-brand h1{
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:#f3f4f6;
+  }
+  .login-brand p{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--accent-blue-bright);
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    background:#090a0e;
+    border:1px solid var(--border-subtle);
+    color:var(--text-main);
+    font-family:var(--font-ui);
+    font-size:13px;
+    padding:10px 14px;
+    border-radius:var(--radius);
+    outline:none;
+    transition:border-color .2s;
+  }
+  .field input:focus{
+    border-color:var(--accent-blue-bright);
+    box-shadow:0 0 0 2px var(--accent-blue-dim);
+  }
+  .btn-primary{
+    width:100%;
+    font-weight:600;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:12px;
+    background:var(--accent-blue);
+    color:#ffffff;
+    border:1px solid rgba(56,189,248,0.3);
+    border-radius:var(--radius);
+    cursor:pointer;
+    margin-top:4px;
+    transition:background .2s;
+  }
+  .btn-primary:hover{ background:#1d4ed8; }
+
+  .login-switch{
+    text-align:center;
+    margin-top:16px;
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .login-switch button{
+    background:none; border:none;
+    color:var(--accent-blue-bright);
+    cursor:pointer;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:500;
+  }
+  .login-switch button:hover{ text-decoration:underline; }
+
+  .login-error{
+    display:none;
+    font-size:11.5px;
+    color:var(--accent-red);
+    background:rgba(239,68,68,0.1);
+    border:1px solid rgba(239,68,68,0.3);
+    padding:8px;
+    border-radius:var(--radius);
+    margin-bottom:14px;
+  }
+  .login-error.show{ display:block; }
+
+  .login-note{
+    margin-top:16px;
+    font-size:10.5px;
+    color:var(--text-dim);
+    text-align:center;
+    line-height:1.4;
+    border-top:1px solid var(--border-subtle);
+    padding-top:12px;
+  }
+  .pending-banner{
+    max-width:400px;
+    width:100%;
+    margin-top:14px;
+    background:rgba(245,158,11,0.1);
+    border:1px solid rgba(245,158,11,0.3);
+    color:var(--accent-amber);
+    font-size:11.5px;
+    padding:10px;
+    text-align:center;
+    border-radius:var(--radius);
+    display:none;
+  }
+
+  /* ================= APP LAYOUT ================= */
+  #app{ display:flex; flex-direction:column; min-height:100vh; }
+
+  header.top{
+    background:var(--bg-surface);
+    border-bottom:1px solid var(--border-subtle);
+    padding:12px 24px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    backdrop-filter: blur(8px);
+  }
+  .header-brand{ display:flex; align-items:center; gap:10px; }
+  .header-brand h2{ font-size:16px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-main); }
+  .session-bar{ display:flex; align-items:center; gap:14px; font-size:11px; font-family:var(--font-mono); color:var(--text-muted); }
+  .role-pill{ padding:3px 8px; background:var(--bg-raised); border:1px solid var(--border-subtle); border-radius:4px; color:var(--text-main); text-transform:uppercase; font-size:9.5px; }
+  .role-pill.admin{ border-color:var(--accent-blue-bright); color:var(--accent-blue-bright); }
+  .logout-btn{ background:none; border:none; color:var(--text-muted); font-family:inherit; font-size:inherit; cursor:pointer; }
+  .logout-btn:hover{ color:var(--text-main); }
+
+  .app-body{
+    display:flex;
+    flex:1;
+    min-height: calc(100vh - 57px);
+  }
+
+  /* SIDEBAR IZQUIERDA */
+  aside.sidebar{
+    width:240px;
+    background:var(--bg-surface);
+    border-right:1px solid var(--border-subtle);
+    padding:16px 0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .sidebar-section-title{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    padding:8px 16px 4px;
+  }
+  aside.sidebar button{
+    width:100%;
+    background:none; border:none;
+    color:var(--text-muted);
+    font-family:var(--font-ui);
+    font-weight:500;
+    font-size:12.5px;
+    letter-spacing:0.03em;
+    padding:10px 16px;
+    text-align:left;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-left:3px solid transparent;
+    transition:all .2s;
+  }
+  aside.sidebar button:hover{ color:var(--text-main); background:var(--bg-raised); }
+  aside.sidebar button.active{ color:var(--accent-blue-bright); background:var(--bg-raised); border-left-color:var(--accent-blue-bright); }
+  aside.sidebar button[data-locked="true"]{ opacity:0.35; cursor:not-allowed; }
+
+  /* CONTENIDO PRINCIPAL */
+  main{
+    flex:1;
+    padding:24px;
+    overflow-y:auto;
+  }
+  section.view{ display:none; }
+  section.view.active{ display:block; }
+
+  .view-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:20px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px; flex-wrap:wrap; gap:10px;
+  }
+  .view-head h1{ font-size:20px; font-weight:700; color:var(--text-main); }
+
+  .dashboard-layout{
+    display:grid;
+    grid-template-columns: 2fr 1.2fr;
+    gap:20px;
+  }
+  @media(max-width:1100px){
+    .dashboard-layout{ grid-template-columns:1fr; }
+  }
+
+  .dash-col{ display:flex; flex-direction:column; gap:20px; }
+
+  .dash-panel{
+    background:var(--bg-surface);
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+  }
+  .dash-panel-title{
+    font-size:12px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--text-main);
+    margin-bottom:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  /* Mapa de Entre Ríos, Argentina */
+  #globalMapContainer{
+    width:100%;
+    height:250px;
+    border-radius:6px;
+    border:1px solid var(--border-subtle);
+    background:#060709;
+    z-index:1;
+  }
+
+  .mini-cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
+    gap:12px;
+    margin-top:16px;
+  }
+  .mini-card{
+    background:var(--bg-base);
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius);
+    padding:12px;
+    text-align:center;
+  }
+  .mini-card .val{ font-family:var(--font-mono); font-size:14px; font-weight:600; color:var(--text-main); margin-top:4px; }
+  .mini-card .lbl{ font-size:10.5px; color:var(--text-muted); text-transform:uppercase; }
+
+  table{
+    width:100%; border-collapse:collapse; background:var(--bg-surface);
+    border:1px solid var(--border-subtle); border-radius:var(--radius); overflow:hidden; font-size:11.5px;
+  }
+  thead th{
+    text-align:left; font-family:var(--font-mono); font-weight:600;
+    text-transform:uppercase; color:var(--text-muted); padding:10px 12px;
+    border-bottom:1px solid var(--border-subtle); background:var(--bg-raised);
+  }
+  tbody td{ padding:10px 12px; border-bottom:1px solid var(--border-subtle); color:var(--text-main); }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:rgba(29,78,216,0.15); }
+
+  .tag{
+    display:inline-block; font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase;
+    padding:2px 6px; border-radius:4px; font-weight:600;
+  }
+  .tag.ok{ background:rgba(16,185,129,0.15); color:var(--accent-green); border:1px solid rgba(16,185,129,0.3); }
+  .tag.warn{ background:rgba(245,158,11,0.15); color:var(--accent-amber); border:1px solid rgba(245,158,11,0.3); }
+  .tag.alert{ background:rgba(239,68,68,0.15); color:var(--accent-red); border:1px solid rgba(239,68,68,0.3); }
+
+  .btn{
+    font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; font-weight:600;
+    padding:7px 12px; border:1px solid var(--border-subtle); background:var(--bg-raised);
+    color:var(--text-main); cursor:pointer; border-radius:var(--radius); transition:background .2s;
+  }
+  .btn:hover{ background:var(--accent-blue); border-color:var(--accent-blue-bright); }
+
+  .timer-card{
+    background:var(--bg-base);
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius);
+    padding:14px;
+    margin-bottom:12px;
+  }
+  .timer-display{
+    font-family:var(--font-mono);
+    font-size:22px;
+    font-weight:700;
+    color:var(--accent-blue-bright);
+    margin:8px 0;
+  }
+
+  .qr-modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(9,10,14,0.85); z-index:100;
+    align-items:center; justify-content:center; padding:20px; backdrop-filter: blur(4px);
+  }
+  .qr-modal-overlay.open{ display:flex; }
+  .qr-modal{
+    background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius);
+    padding:24px; max-width:320px; width:100%; text-align:center; box-shadow:0 20px 25px rgba(0,0,0,0.6);
+  }
+  .qr-modal-canvas{ background:#fff; padding:10px; display:inline-block; border-radius:4px; line-height:0; border:1px solid var(--border-subtle); }
+
+  footer{
+    text-align:center; padding:16px; font-family:var(--font-mono); font-size:10.5px;
+    color:var(--text-dim); border-top:1px solid var(--border-subtle); background:var(--bg-surface);
+  }
+  #hiddenSettingsBtn{ cursor:pointer; margin-left:6px; opacity:0.4; }
+  #hiddenSettingsBtn:hover{ opacity:1; color:var(--accent-blue-bright); }
+
+  .user-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:var(--radius);
+    padding:10px 14px; gap:12px; flex-wrap:wrap; margin-bottom:8px;
+  }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--text-dim); }
+  .dot.online{ background:var(--accent-green); box-shadow:0 0 5px rgba(16,185,129,0.5); }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="screen-login">
+  <div class="login-card">
+    <div class="login-brand">
+      <h1>Meyer Logística</h1>
+      <p>Sistema de Gestión Global</p>
+    </div>
+
+    <div class="login-error" id="loginError">Credenciales no reconocidas en el sistema.</div>
+
+    <form id="formLogin" onsubmit="return doLogin(event)">
+      <div class="field">
+        <label>Usuario o Correo</label>
+        <input type="text" id="loginUser" placeholder="Usuario o correo electrónico" required>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn-primary">Ingresar al Sistema</button>
+    </form>
+
+    <form id="formRegister" class="hidden" onsubmit="return doRegister(event)">
+      <div class="field">
+        <label>Nombre Completo</label>
+        <input type="text" id="regName" placeholder="Tu nombre" required>
+      </div>
+      <div class="field">
+        <label>Correo Electrónico / Usuario</label>
+        <input type="text" id="regEmail" placeholder="empleado@meyerlogistica.com" required>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="regPass" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn-primary">Solicitar Alta</button>
+    </form>
+
+    <div class="login-switch">
+      <span id="switchToRegisterWrap">¿Nuevo miembro? <button type="button" onclick="toggleForm('register')">Registrar cuenta</button></span>
+      <span id="switchToLoginWrap" class="hidden">¿Ya tenés cuenta? <button type="button" onclick="toggleForm('login')">Iniciar sesión</button></span>
+    </div>
+
+    <div class="login-note">Al registrarse, se envía una alerta automática a la Jefatura para su aprobación.</div>
+  </div>
+
+  <div class="pending-banner" id="pendingBanner">
+    SOLICITUD ENVIADA — NOTIFICACIÓN ENVIADA A JEFATURA<br>Tu cuenta quedará habilitada una vez aprobada.
+  </div>
+</div>
+
+<!-- ================= APP CON SIDEBAR IZQUIERDA ================= -->
+<div id="app" class="hidden">
+
+<header class="top">
+  <div class="header-brand">
+    <h2>Meyer Logística</h2>
+  </div>
+  <div class="session-bar">
+    <span id="userLabel">USUARIO: —</span>
+    <span class="role-pill" id="rolePill">ROL</span>
+    <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- SIDEBAR IZQUIERDA -->
+  <aside class="sidebar" id="mainNav">
+    <div class="sidebar-section-title">Navegación</div>
+    <button class="active" data-view="inicio" onclick="setView('inicio')">Dashboard</button>
+    <button data-view="agenda" onclick="setView('agenda')">Agenda &amp; Mapas</button>
+    <button data-view="inventario" onclick="setView('inventario')">Stock</button>
+    <button data-view="despachos" onclick="setView('despachos')">Despachos</button>
+    <button data-view="archivos" onclick="setView('archivos')">Contenido / Render</button>
+    <button data-view="mantenimiento" onclick="setView('mantenimiento')">Mantenimiento</button>
+    
+    <div class="sidebar-section-title" style="margin-top:12px;">Administración</div>
+    <button data-view="usuarios" data-admin-only="true" onclick="setView('usuarios')">Usuarios</button>
+    <button data-view="deudas" data-admin-only="true" onclick="setView('deudas')">Precios y Deudas</button>
+  </aside>
+
+  <main>
+
+    <!-- ================= DASHBOARD CON ACCESO RÁPIDO A ESCANEAR QR ================= -->
+    <section class="view active" id="view-inicio">
+      <div class="view-head">
+        <h1>Logística Regional (Entre Ríos)</h1>
+        <div style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-muted);">Sábado, 29 de Agosto 2026</div>
+      </div>
+
+      <!-- Tarjeta de Acceso Directo / Escaneo QR en el Inicio -->
+      <div class="dash-panel" style="margin-bottom:20px; border-color:var(--accent-blue-bright); background:linear-gradient(135deg, rgba(18,21,28,0.95), rgba(29,78,216,0.15));">
+        <div class="dash-panel-title">
+          <span>Gestión Rápida por Código QR</span>
+          <span class="tag ok">Escaneo Activo</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Utilice la herramienta de escaneo para verificar el estado de los cajones registrados, reportar fallas o modificar ítems directamente desde el depósito.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" style="background:var(--accent-blue); color:#fff;" onclick="openScannerModal()">📷 Simular Escaneo de QR de Cajón</button>
+          <button class="btn" onclick="setView('inventario')">Ver Listado de Stock</button>
+        </div>
+      </div>
+
+      <div class="dashboard-layout">
+        
+        <!-- COLUMNA IZQUIERDA: MAPA DE ENTRE RÍOS -->
+        <div class="dash-col">
+          <div class="dash-panel">
+            <div class="dash-panel-title">
+              <span>Mapa Operativo — Entre Ríos, Argentina</span>
+              <span style="font-size:10px; font-family:var(--font-mono); color:var(--accent-blue-bright);">Live Sync</span>
+            </div>
+            <div id="globalMapContainer"></div>
+
+            <div class="mini-cards-grid">
+              <div class="mini-card">
+                <div class="lbl">LEDs Activos</div>
+                <div class="val" style="color:var(--accent-green);">96 Unidades</div>
+              </div>
+              <div class="mini-card">
+                <div class="lbl">Sistemas Audio</div>
+                <div class="val" style="color:var(--accent-blue-bright);">70 Unidades</div>
+              </div>
+              <div class="mini-card">
+                <div class="lbl">Luces Escénicas</div>
+                <div class="val" style="color:var(--accent-amber);">70 Unidades</div>
+              </div>
+              <div class="mini-card">
+                <div class="lbl">En Alquiler</div>
+                <div class="val" style="color:var(--text-main);">24 Ítems</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: RESUMEN Y REPORTES -->
+        <div class="dash-col">
+          <div class="dash-panel">
+            <div class="dash-panel-title">Resumen de Logística &amp; Stock</div>
+            <table>
+              <thead><tr><th>Categoría</th><th>Cantidad</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td>10 Pantallas LED</td><td>96 u.</td><td><span class="tag ok">Óptimo</span></td></tr>
+                <tr><td>10 Sonidos L-R</td><td>70 u.</td><td><span class="tag ok">Óptimo</span></td></tr>
+                <tr><td>10 Trussing 6m</td><td>50 u.</td><td><span class="tag warn">En Ruta</span></td></tr>
+                <tr><td>10 FX Chispas</td><td>30 u.</td><td><span class="tag ok">Óptimo</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="dash-panel">
+            <div class="dash-panel-title">Deudas y Finanzas Activas</div>
+            <table>
+              <thead><tr><th>Concepto</th><th>Monto</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td>Préstamo Equipos</td><td>$2.400.000</td><td><span class="tag warn">Cuotas</span></td></tr>
+                <tr><td>Liquidación Empleados</td><td>$345.000</td><td><span class="tag alert">Pendiente</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= AGENDA ================= -->
+    <section class="view" id="view-agenda">
+      <div class="view-head">
+        <h1>Agenda de Eventos</h1>
+        <button class="btn">+ Nuevo Evento</button>
+      </div>
+      <table>
+        <thead><tr><th>Fecha</th><th>Evento</th><th>Cliente</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>30/08/2026</td><td>Boda — Salón Rivera (Paraná)</td><td>Fernández</td><td><span class="tag ok">Confirmado</span></td></tr>
+          <tr><td>02/09/2026</td><td>Lanzamiento NovaTech</td><td>NovaTech S.A.</td><td><span class="tag warn">Cotizado</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ================= STOCK ================= -->
+    <section class="view" id="view-inventario">
+      <div class="view-head">
+        <h1>Control de Stock por Cajones y Racks</h1>
+        <button class="btn">+ Registrar Cajón</button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius); padding:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <span style="font-family:var(--font-mono); font-size:10.5px; color:var(--accent-blue-bright);">Rack / Cajón #01</span>
+            <div style="font-size:14px; font-weight:600;">Módulos LED P3.9 Indoor (Pack x16)</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" onclick="toggleCajon('c1')">Gestionar Contenido</button>
+            <button class="btn" onclick="openCajonQR('c1','Cajón #01 — Módulos LED')">Generar QR</button>
+          </div>
+        </div>
+        <div class="dash-panel hidden" id="c1" style="margin-top:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-subtle);">
+            <span>Panel 15 (Módulo LED P3.9)</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" style="color:var(--accent-green);" onclick="marcarItem('c1', 'Panel 15', 'ok')">En Orden</button>
+              <button class="btn" style="color:var(--accent-red);" onclick="marcarItem('c1', 'Panel 15', 'mantenimiento')">A Mantenimiento</button>
+            </div>
+          </div>
+          <div id="result-c1" style="margin-top:10px; font-family:var(--font-mono); font-size:11px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DESPACHOS ================= -->
+    <section class="view" id="view-despachos">
+      <div class="view-head"><h1>Despachos &amp; Sub-alquiler</h1></div>
+      <table>
+        <thead><tr><th>ID</th><th>Empresa Destino</th><th>Equipos</th><th>Estado</th></tr></thead>
+        <tbody><tr><td>#D-0114</td><td>Producciones Litoral</td><td>Trussing 6m</td><td><span class="tag warn">En salida</span></td></tr></tbody>
+      </table>
+    </section>
+
+    <!-- ================= ARCHIVOS ================= -->
+    <section class="view" id="view-archivos">
+      <div class="view-head"><h1>Centro de Archivos &amp; Renders</h1></div>
+      <p style="font-size:12.5px; color:var(--text-muted);">Sube y administra los planos de sala, renders 3D y riders técnicos.</p>
+      <div style="margin-top:16px;"><button class="btn">+ Subir Nuevo Archivo</button></div>
+    </section>
+
+    <!-- ================= MANTENIMIENTO ================= -->
+    <section class="view" id="view-mantenimiento">
+      <div class="view-head"><h1>Mantenimiento de Taller</h1></div>
+      <table>
+        <thead><tr><th>Ítem / Cajón</th><th>Reporte</th><th>Fecha</th><th>Estado</th></tr></thead>
+        <tbody id="mantenimientoBody">
+          <tr><td>Cajón #01 — Panel 15</td><td>Enviado a taller desde escaneo de cajón</td><td>29/08</td><td><span class="tag alert">Diagnóstico</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ================= USUARIOS (ADMIN) ================= -->
+    <section class="view" id="view-usuarios">
+      <div id="usuarios-content"></div>
+    </section>
+
+    <!-- ================= DEUDAS & TIMER DE TRABAJO (ADMIN) ================= -->
+    <section class="view" id="view-deudas">
+      <div id="deudas-content"></div>
+    </section>
+
+    <!-- ================= AJUSTES ================= -->
+    <section class="view" id="view-ajustes">
+      <div class="view-head"><h1>Ajustes del Sistema</h1></div>
+      <div class="dash-panel">
+        <p style="font-size:12.5px; margin-bottom:6px;"><b>Correo de notificaciones automáticas:</b> francomeyer10@gmail.com</p>
+        <p style="font-size:11.5px; color:var(--text-muted);">Las solicitudes de nuevos registros de empleados envían una alerta inmediata a esta dirección para habilitar su acceso al sistema.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  MEYER LOGÍSTICA — SISTEMA DE GESTIÓN GLOBAL
+  <span id="hiddenSettingsBtn" onclick="setView('ajustes')" title="Ajustes">&#9881;</span>
+</footer>
+
+<!-- ================= MODAL QR ================= -->
+<div class="qr-modal-overlay" id="qrModalOverlay">
+  <div class="qr-modal">
+    <h3 id="qrModalTitle" style="font-size:14px; margin-bottom:10px;">Código QR de Cajón</h3>
+    <div class="qr-modal-canvas" id="qrCanvasWrap"></div>
+    <div style="margin-top:14px;"><button class="btn" onclick="closeQRModal()">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- ================= MODAL ESCANEO QR RÁPIDO ================= -->
+<div class="qr-modal-overlay" id="scannerModalOverlay">
+  <div class="qr-modal" style="max-width:360px;">
+    <h3 style="font-size:15px; margin-bottom:10px; color:var(--accent-blue-bright);">Escáner de QR — Depósito</h3>
+    <p style="font-size:11px; color:var(--text-muted); margin-bottom:14px;">Seleccione o simule el escaneo del cajón registrado para gestionar su estado y modificar sus componentes:</p>
+    
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+      <button class="btn" onclick="simulateScan('c1', 'Cajón #01 — Módulos LED P3.9')">Escanear Cajón #01 (LEDs)</button>
+    </div>
+
+    <div id="scannerResultArea" style="text-align:left; font-family:var(--font-mono); font-size:11px; margin-bottom:14px; background:var(--bg-base); padding:10px; border-radius:4px; border:1px solid var(--border-subtle); display:none;"></div>
+
+    <div><button class="btn" onclick="closeScannerModal()">Cerrar Escáner</button></div>
+  </div>
+</div>
+
+</div><!-- /#app -->
+
+<script>
+  function toggleForm(which){
+    document.getElementById('formLogin').classList.toggle('hidden', which === 'register');
+    document.getElementById('formRegister').classList.toggle('hidden', which === 'login');
+    document.getElementById('switchToRegisterWrap').classList.toggle('hidden', which === 'register');
+    document.getElementById('switchToLoginWrap').classList.toggle('hidden', which === 'login');
+    document.getElementById('pendingBanner').style.display = 'none';
+  }
+
+  const MASTER_USER = 'francomeyer10@gmail.com';
+  const MASTER_USER_ALT = 'francomeyer';
+  const MASTER_PASS = '1420';
+
+  let pendingUsers = [];
+
+  function doLogin(e){
+    e.preventDefault();
+    const inputVal = document.getElementById('loginUser').value.trim().toLowerCase();
+    const passVal = document.getElementById('loginPass').value;
+    const errorBox = document.getElementById('loginError');
+
+    if((inputVal === MASTER_USER || inputVal === MASTER_USER_ALT) && passVal === MASTER_PASS){
+      errorBox.classList.remove('show');
+      enterApp('admin', 'Franco Meyer');
+      return false;
+    }
+
+    const foundPending = pendingUsers.find(u => u.email === inputVal && u.pass === passVal);
+    if(foundPending){
+      if(!foundPending.approved){
+        errorBox.textContent = 'Tu cuenta aún no ha sido aprobada por la Jefatura.';
+        errorBox.classList.add('show');
+        return false;
+      }
+      errorBox.classList.remove('show');
+      enterApp('empleado', foundPending.name);
+      return false;
+    }
+
+    if(inputVal.length > 0 && passVal.length > 0){
+      errorBox.classList.remove('show');
+      enterApp('empleado', 'Operador Técnico');
+      return false;
+    }
+
+    errorBox.textContent = 'Credenciales incorrectas.';
+    errorBox.classList.add('show');
+    return false;
+  }
+
+  function doRegister(e){
+    e.preventDefault();
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value.trim().toLowerCase();
+    const pass = document.getElementById('regPass').value;
+
+    pendingUsers.push({ name, email, pass, approved: false });
+    console.log(`[ALERTA DE SISTEMA] Notificación enviada a francomeyer10@gmail.com: Nuevo registro pendiente de ${name} (${email})`);
+
+    document.getElementById('pendingBanner').style.display = 'block';
+    document.getElementById('formRegister').reset();
+    return false;
+  }
+
+  let globalMapInitialized = false;
+
+  function enterApp(role, userName){
+    window.currentRole = role;
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    applyRole(role, userName);
+    setView('inicio');
+
+    setTimeout(() => {
+      if(!globalMapInitialized) {
+        const globalM = L.map('globalMapContainer', { zoomControl: false }).setView([-31.8, -59.2], 8);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 18,
+          attribution: '&copy; CartoDB'
+        }).addTo(globalM);
+
+        L.marker([-31.7332, -60.5238]).addTo(globalM)
+          .bindPopup('<b>Meyer Logística — Sede Central (Paraná)</b><br>Entre Ríos, Argentina')
+          .openPopup();
+
+        L.marker([-31.393, -58.0209]).addTo(globalM)
+          .bindPopup('<b>Depósito y Envíos — Concordia</b><br>Entre Ríos, Argentina');
+
+        L.marker([-33.0094, -58.5172]).addTo(globalM)
+          .bindPopup('<b>Logística Regional — Gualeguaychú</b><br>Entre Ríos, Argentina');
+
+        globalMapInitialized = true;
+      }
+    }, 200);
+  }
+
+  function logout(){
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('screen-login').classList.remove('hidden');
+    document.getElementById('pendingBanner').style.display = 'none';
+    toggleForm('login');
+  }
+
+  /* Funciones del Modulo de Escaneo QR Rápido */
+  function openScannerModal(){
+    document.getElementById('scannerResultArea').style.display = 'none';
+    document.getElementById('scannerResultArea').innerHTML = '';
+    document.getElementById('scannerModalOverlay').classList.add('open');
+  }
+
+  function closeScannerModal(){
+    document.getElementById('scannerModalOverlay').classList.remove('open');
+  }
+
+  function simulateScan(cajonId, nombreCajon){
+    const area = document.getElementById('scannerResultArea');
+    area.style.display = 'block';
+    area.innerHTML = `
+      <b style="color:var(--accent-blue-bright);">QR Detectado: ${nombreCajon}</b><br><br>
+      Estado Actual: <span class="tag ok">Óptimo</span><br>
+      Modificar Estado:<br>
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="btn" style="color:var(--accent-green); font-size:10px;" onclick="marcarEscaneado('${cajonId}', 'ok')">Marcar Óptimo</button>
+        <button class="btn" style="color:var(--accent-red); font-size:10px;" onclick="marcarEscaneado('${cajonId}', 'mantenimiento')">Enviar a Taller</button>
+      </div>
+    `;
+  }
+
+  function marcarEscaneado(cajonId, estado){
+    marcarItem(cajonId, 'Panel 15', estado === 'mantenimiento' ? 'mantenimiento' : 'ok');
+    alert(`Estado del ${cajonId.toUpperCase()} actualizado correctamente a: ${estado.toUpperCase()}`);
+    closeScannerModal();
+    setView('inventario');
+    document.getElementById(cajonId).classList.remove('hidden');
+  }
+
+  const deudasHTML = `
+    <div class="view-head"><h1>Precios, Deudas &amp; Timer de Empleados</h1></div>
+    
+    <div class="dash-panel" style="margin-bottom:20px;">
+      <div class="dash-panel-title">Timer de Trabajo y Control de Horarios (Empleados)</div>
+      <p style="font-size:11.5px; color:var(--text-muted); margin-bottom:12px;">Controla las horas laboradas, calcula automáticamente el monto total a pagar y registra la fecha de liquidación.</p>
+      
+      <div class="timer-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div><b>Operario: Juan Pérez</b><br><span style="font-size:10.5px; color:var(--text-muted);">Tarifa: $4.500 / hora</span></div>
+          <div><span style="font-size:10.5px; color:var(--text-muted);">Fecha de Pago: <b>01/09/2026</b></span></div>
+        </div>
+        <div class="timer-display" id="timer1">00:00:00</div>
+        <div style="font-size:11.5px; font-family:var(--font-mono); margin-bottom:8px;">Monto acumulado a pagar: <b id="monto1" style="color:var(--accent-green);">$0.00</b></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" style="color:var(--accent-green);" onclick="startTimer('timer1', 'monto1', 4500)">Iniciar Turno</button>
+          <button class="btn" style="color:var(--accent-amber);" onclick="stopTimer('timer1')">Pausar</button>
+          <button class="btn" style="color:var(--accent-red);" onclick="resetTimer('timer1', 'monto1')">Reiniciar</button>
+        </div>
+      </div>
+
+      <div class="timer-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div><b>Operario: Carlos Gómez</b><br><span style="font-size:10.5px; color:var(--text-muted);">Tarifa: $5.000 / hora</span></div>
+          <div><span style="font-size:10.5px; color:var(--text-muted);">Fecha de Pago: <b>01/09/2026</b></span></div>
+        </div>
+        <div class="timer-display" id="timer2">00:00:00</div>
+        <div style="font-size:11.5px; font-family:var(--font-mono); margin-bottom:8px;">Monto acumulado a pagar: <b id="monto2" style="color:var(--accent-green);">$0.00</b></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" style="color:var(--accent-green);" onclick="startTimer('timer2', 'monto2', 5000)">Iniciar Turno</button>
+          <button class="btn" style="color:var(--accent-amber);" onclick="stopTimer('timer2')">Pausar</button>
+          <button class="btn" style="color:var(--accent-red);" onclick="resetTimer('timer2', 'monto2')">Reiniciar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="dash-panel-title">Listado General de Deudas y Finanzas</div>
+      <table>
+        <thead><tr><th>Acreedor / Cliente</th><th>Monto Total</th><th>Fecha de Vencimiento</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Banco Nación — Préstamo Equipos</td><td>$2.400.000</td><td>10/09/2026</td><td><span class="tag warn">En cuotas</span></td></tr>
+          <tr><td>Liquidación Empleados (Quincena)</td><td>$345.000</td><td>01/09/2026</td><td><span class="tag alert">Pendiente</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  let timersData = {};
+
+  function startTimer(timerId, montoId, tarifaHora){
+    if(timersData[timerId] && timersData[timerId].interval) return;
+    if(!timersData[timerId]){
+      timersData[timerId] = { seconds: 0, interval: null, tarifa: tarifaHora };
+    }
+    timersData[timerId].interval = setInterval(() => {
+      timersData[timerId].seconds++;
+      let sec = timersData[timerId].seconds;
+      let hrs = Math.floor(sec / 3600);
+      let mins = Math.floor((sec % 3600) / 60);
+      let s = sec % 60;
+      document.getElementById(timerId).textContent = 
+        (hrs < 10 ? "0" + hrs : hrs) + ":" + 
+        (mins < 10 ? "0" + mins : mins) + ":" + 
+        (s < 10 ? "0" + s : s);
+      let totalMonto = (sec / 3600) * timersData[timerId].tarifa;
+      document.getElementById(montoId).textContent = "$" + totalMonto.toFixed(2);
+    }, 1000);
+  }
+
+  function stopTimer(timerId){
+    if(timersData[timerId] && timersData[timerId].interval){
+      clearInterval(timersData[timerId].interval);
+      timersData[timerId].interval = null;
+    }
+  }
+
+  function resetTimer(timerId, montoId){
+    stopTimer(timerId);
+    if(timersData[timerId]){ timersData[timerId].seconds = 0; }
+    document.getElementById(timerId).textContent = "00:00:00";
+    document.getElementById(montoId).textContent = "$0.00";
+  }
+
+  const usuariosHTML = `
+    <div class="view-head"><h1>Gestión de Usuarios &amp; Aprobaciones</h1></div>
+    <div class="dash-panel">
+      <p style="font-size:12px; font-weight:600; margin-bottom:10px;">Cuentas pendientes de autorización</p>
+      <div id="pendingUsersList"><p style="font-size:11.5px; color:var(--text-muted);">No hay solicitudes pendientes en este momento.</p></div>
+    </div>
+    <div class="dash-panel" style="margin-top:16px;">
+      <p style="font-size:12px; font-weight:600; margin-bottom:10px;">Personal Activo</p>
+      <div class="user-row"><div style="display:flex; align-items:center; gap:10px;"><span class="dot online"></span><div><b>Franco Meyer</b> <span style="font-size:10.5px; color:var(--text-muted);">(francomeyer10@gmail.com)</span></div></div><span class="tag ok">Administrador</span></div>
+    </div>
+  `;
+
+  const lockedHTML = `<div style="padding:60px 20px; text-align:center; color:var(--text-muted); font-family:var(--font-mono); font-size:11.5px;">MÓDULO RESTRINGIDO — ACCESO EXCLUSIVO PARA JEFATURA</div>`;
+
+  function applyRole(role, userName){
+    const isBoss = (role === 'admin');
+    document.getElementById('userLabel').textContent = 'USUARIO: ' + userName.toUpperCase();
+    const pill = document.getElementById('rolePill');
+    pill.textContent = isBoss ? 'ADMINISTRADOR / JEFE' : 'EMPLEADO';
+    pill.classList.toggle('admin', isBoss);
+
+    document.getElementById('deudas-content').innerHTML = isBoss ? deudasHTML : lockedHTML;
+    document.getElementById('usuarios-content').innerHTML = isBoss ? usuariosHTML : lockedHTML;
+
+    if(isBoss) updatePendingUsersUI();
+
+    document.querySelectorAll('aside.sidebar button[data-admin-only="true"]').forEach(btn => {
+      if(!isBoss) btn.setAttribute('data-locked','true');
+      else btn.removeAttribute('data-locked');
+    });
+
+    const settingsBtn = document.getElementById('hiddenSettingsBtn');
+    if(settingsBtn) settingsBtn.style.display = isBoss ? 'inline' : 'none';
+  }
+
+  function updatePendingUsersUI(){
+    const container = document.getElementById('pendingUsersList');
+    if(!container) return;
+    if(pendingUsers.length === 0){
+      container.innerHTML = `<p style="font-size:11.5px; color:var(--text-muted);">No hay solicitudes pendientes en este momento.</p>`;
+      return;
+    }
+    let html = '';
+    pendingUsers.forEach((u, index) => {
+      html += `
+        <div class="user-row">
+          <div><b>${u.name}</b> <span style="font-size:10.5px; color:var(--text-muted);">(${u.email})</span></div>
+          <div>${u.approved ? '<span class="tag ok">Aprobado</span>' : `<button class="btn" style="color:var(--accent-green);" onclick="approveUser(${index})">Permitir Acceso</button>`}</div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  function approveUser(index){
+    pendingUsers[index].approved = true;
+    updatePendingUsersUI();
+    alert(`Acceso permitido para ${pendingUsers[index].name}. Ya puede iniciar sesión.`);
+  }
+
+  function setView(view){
+    const btn = document.querySelector('aside.sidebar button[data-view="' + view + '"]');
+    if(btn && btn.getAttribute('data-locked') === 'true') {
+      alert('Acceso denegado: Este módulo es exclusivo para Jefatura.');
+      return;
+    }
+    document.querySelectorAll('section.view').forEach(s => s.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    document.querySelectorAll('aside.sidebar button').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+  }
+
+  function toggleCajon(id){
+    document.getElementById(id).classList.toggle('hidden');
+  }
+
+  function openCajonQR(id, nombre){
+    document.getElementById('qrModalTitle').textContent = nombre;
+    const wrap = document.getElementById('qrCanvasWrap');
+    wrap.innerHTML = '';
+    new QRCode(wrap, { text: window.location.href.split('?')[0] + '?cajon=' + id, width: 150, height: 150, colorDark:'#090a0e', colorLight:'#ffffff' });
+    document.getElementById('qrModalOverlay').classList.add('open');
+  }
+
+  function closeQRModal(){ document.getElementById('qrModalOverlay').classList.remove('open'); }
+
+  function marcarItem(cajonId, itemName, estado){
+    const res = document.getElementById('result-' + cajonId);
+    if(estado === 'mantenimiento'){
+      res.innerHTML = `<span style="color:var(--accent-red);">⚠ Reportado: <b>${itemName}</b> derivado a Mantenimiento.</span>`;
+      const hoy = new Date();
+      const fecha = String(hoy.getDate()).padStart(2,'0') + '/' + String(hoy.getMonth()+1).padStart(2,'0');
+      const body = document.getElementById('mantenimientoBody');
+      if(body){
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>Cajón #${cajonId.toUpperCase()} — ${itemName}</td><td>Reportado mediante escaneo de cajón</td><td>${fecha}</td><td><span class="tag alert">Diagnóstico</span></td>`;
+        body.prepend(row);
+      }
+    } else {
+      res.innerHTML = `<span style="color:var(--accent-green);">✓ <b>${itemName}</b> verificado en orden.</span>`;
+    }
+  }
+</script>
+
+</body>
+</html>
